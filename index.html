@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PennyWise - Smart Expense Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --card-bg: rgba(255,255,255,0.9);
+  --text:#222; --muted:#444;
+  --good: #1b8a2a; --bad: #c62828;
+  --btn1:#4facfe; --btn2:#00f2fe;
+}
+body.dark{
+  --bg: radial-gradient(1200px 800px at 20% -10%, #0f172a, #0b1220 50%, #090e1a 100%);
+  --card-bg: rgba(15,23,42,0.85);
+  --text:#e5e7eb; --muted:#9ca3af;
+  --good:#22c55e; --bad:#ef4444;
+  --btn1:#6366f1; --btn2:#22d3ee;
+}
+*{box-sizing:border-box}
+body { margin:0;padding:0;font-family:'Poppins',sans-serif; background:var(--bg); min-height:100vh; display:flex; flex-direction:column; align-items:center; color:var(--text); transition:background .3s,color .3s;}
+header { width:100%; max-width:900px; display:flex; justify-content:space-between; align-items:center; padding:16px 20px; color:white; font-size:1.6rem; font-weight:700;}
+header .brand{display:flex;align-items:center;gap:10px}
+header .actions{display:flex;gap:8px;align-items:center}
+.card { background: var(--card-bg); backdrop-filter: blur(12px); border-radius: 20px; box-shadow:0 6px 20px rgba(0,0,0,0.15); padding:20px; margin:12px; width:95%; max-width:900px;}
+input, select, button, textarea { width:100%; padding:12px; margin:8px 0; border-radius:12px; border:1px solid rgba(0,0,0,.15); font-size:1rem; background:transparent; color:var(--text);}
+button { background: linear-gradient(135deg, var(--btn1), var(--btn2)); border:none;color:white;font-weight:600;cursor:pointer;transition:transform .06s ease,opacity .2s;}
+button:active{transform:scale(.98);}
+button:hover{opacity:0.9;}
+.transaction-list { max-height:360px; overflow-y:auto;}
+.transaction { display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid rgba(0,0,0,0.1);}
+.transaction.credit { color: var(--good); } .transaction.debit { color: var(--bad); }
+.summary { display:grid; grid-template-columns: repeat(3,1fr); gap:12px; padding:8px 0 0; font-size:1.05rem; font-weight:700; }
+.pill{background:rgba(0,0,0,.06); padding:12px; border-radius:14px; text-align:center;}
+.actions button { padding:6px 10px; font-size:.85rem; margin-left:5px; border-radius:10px;}
+.edit-btn{background:#f59e0b;} .delete-btn{background:#ef4444;}
+.export-btn{margin:5px 0;}
+#loginCard{display:none;}
+#recoverySection{display:none;}
+#app{display:none;}
+.small{font-size:.9rem;color:var(--muted);}
+.linklike{background:transparent;color:#38bdf8;border:none;padding:0;text-decoration:underline;width:auto;}
+.row{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+@media(max-width:720px){.row{grid-template-columns:1fr}}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap}
+.muted{color:var(--muted)}
+table{width:100%; border-collapse:collapse; margin-top:10px;}
+table, th, td{border:1px solid rgba(0,0,0,0.2);}
+th, td{padding:8px; text-align:left;}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">💰 PennyWise</div>
+  <div class="actions">
+    <button id="themeToggle" title="Toggle theme">🌙 Dark</button>
+  </div>
+</header>
+
+<!-- LOGIN SCREEN -->
+<div class="card" id="loginCard">
+  <h2 id="loginTitle">🔒 Enter PIN</h2>
+  <input type="password" id="pinInput" placeholder="Enter PIN" maxlength="6">
+  <button onclick="checkPIN()">Unlock</button>
+
+  <div id="firstTimeHint" class="small" style="display:none;">
+    First time here? Set a new PIN and we'll also create a <strong>Recovery Code</strong> for you.
+  </div>
+
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+    <button class="linklike" onclick="toggleRecovery(true)">Forgot PIN?</button>
+    <button class="linklike" onclick="factoryResetPrompt()">Factory reset (erase data)</button>
+  </div>
+
+  <div id="recoverySection">
+    <h3>🔁 Reset with Recovery Code</h3>
+    <p class="small">Enter your saved recovery code to set a new PIN without losing your data.</p>
+    <input type="text" id="recoveryInput" placeholder="Enter Recovery Code">
+    <input type="password" id="newPin" placeholder="New PIN" maxlength="6">
+    <button onclick="resetWithRecovery()">Reset PIN</button>
+    <button class="linklike" onclick="toggleRecovery(false)">Back to login</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="card">
+    <h2>Add Transaction</h2>
+    <div class="row">
+      <input type="text" id="party" placeholder="Party/Person Name">
+      <select id="type">
+        <option value="credit">Sent</option>
+        <option value="debit">Got</option>
+      </select>
+      <input type="number" id="amount" placeholder="Amount">
+      <input type="date" id="date">
+    </div>
+    <textarea id="desc" placeholder="Description"></textarea>
+    <div class="toolbar">
+      <button onclick="addTransaction()">Add</button>
+      <label class="small" for="importCSV" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+        ⬆️ Import CSV <input id="importCSV" type="file" accept=".csv" style="display:none" onchange="importFromCSV(event)">
+      </label>
+      <button class="export-btn" onclick="exportToCSV()">📄 Export CSV</button>
+      <button class="export-btn" onclick="exportToPDF()">📑 Export PDF</button>
+      <button class="export-btn" onclick="exportToExcel()">📊 Export Excel</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Filters</h2>
+    <div class="row">
+      <input id="qParty" placeholder="Search party/person">
+      <select id="qType">
+        <option value="">All Types</option>
+        <option value="credit">Sent</option>
+        <option value="debit">Got</option>
+      </select>
+      <input id="qMin" type="number" placeholder="Min amount">
+      <input id="qMax" type="number" placeholder="Max amount">
+      <input id="qFrom" type="date" placeholder="From date">
+      <input id="qTo" type="date" placeholder="To date">
+    </div>
+    <div class="toolbar">
+      <button onclick="applyFilters()">🔎 Apply</button>
+      <button onclick="clearFilters()">♻️ Clear</button>
+    </div>
+    <p class="small muted">Tip: Filters are applied on the list and summary below.</p>
+  </div>
+
+  <div class="card">
+    <h2>Summary</h2>
+    <div class="summary">
+      <div class="pill" id="totalCredit">Sent: ₹0</div>
+      <div class="pill" id="totalDebit">Got: ₹0</div>
+      <div class="pill" id="balance">Balance: ₹0</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Transactions</h2>
+    <div class="transaction-list" id="transactions"></div>
+  </div>
+
+  <!-- AI Summary Section -->
+  <div class="card">
+    <h2>💡 AI Expense Summary</h2>
+    <p class="small muted">Optional: Enter your monthly salary for personalized advice</p>
+    <input type="number" id="salaryInput" placeholder="Enter your monthly salary (optional)">
+    <button onclick="generateAISummary()">Generate Summary</button>
+
+    <h3>Transaction Overview</h3>
+    <table id="aiSummaryTable">
+      <thead>
+        <tr>
+          <th>Party</th>
+          <th>Sent (₹)</th>
+          <th>Got (₹)</th>
+          <th>Description</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h3>AI Advice</h3>
+    <div id="aiAdvice" class="small muted"></div>
+  </div>
+</div>
+
+<script>
+// ===== Storage helpers =====
+const PIN_KEY = 'pennyPin';
+const RECOVERY_KEY = 'pennyRecovery';
+const TX_KEY = 'transactions';
+const THEME_KEY = 'pennyTheme';
+
+const getPIN = () => localStorage.getItem(PIN_KEY);
+const setPIN = (pin) => localStorage.setItem(PIN_KEY, btoa(pin));
+const checkPINMatch = (pin) => localStorage.getItem(PIN_KEY) === btoa(pin);
+const getRecovery = () => localStorage.getItem(RECOVERY_KEY);
+const setRecovery = (code) => localStorage.setItem(RECOVERY_KEY, btoa(code));
+
+let transactions = JSON.parse(localStorage.getItem(TX_KEY)) || [];
+let editIndex = null;
+let filters = { qParty:"", qType:"", qMin:"", qMax:"", qFrom:"", qTo:"" };
+
+// ===== Theme =====
+const themeBtn = document.getElementById('themeToggle');
+function setTheme(mode){
+  if(mode==='dark'){ document.body.classList.add('dark'); themeBtn.textContent='☀️ Light'; }
+  else { document.body.classList.remove('dark'); themeBtn.textContent='🌙 Dark'; }
+  localStorage.setItem(THEME_KEY, mode);
+}
+themeBtn.onclick = ()=> setTheme(document.body.classList.contains('dark')? 'light':'dark');
+
+// ===== Login flow =====
+window.onload = function() {
+  setTheme(localStorage.getItem(THEME_KEY)||'light');
+  const hasPIN = !!getPIN();
+  document.getElementById('loginCard').style.display = 'block';
+  document.getElementById('loginTitle').innerText = hasPIN ? '🔒 Enter PIN' : '🔑 Set a new PIN';
+  document.getElementById('firstTimeHint').style.display = hasPIN ? 'none' : 'block';
+}
+
+function checkPIN() {
+  const inputPIN = document.getElementById('pinInput').value.trim();
+  const hasPIN = !!getPIN();
+  if(!hasPIN){
+    if(inputPIN.length < 4){ alert('PIN must be at least 4 digits'); return; }
+    setPIN(inputPIN);
+    const rec = generateRecoveryCode();
+    setRecovery(rec);
+    alert('PIN set successfully!\nYour Recovery Code (save it safely):\n\n'+rec);
+    unlockApp();
+  } else {
+    if(checkPINMatch(inputPIN)){ unlockApp(); }
+    else{ alert('❌ Wrong PIN'); }
+  }
+}
+function toggleRecovery(show){ document.getElementById('recoverySection').style.display=show?'block':'none'; }
+function resetWithRecovery(){
+  const rec = document.getElementById('recoveryInput').value.trim();
+  const newPin = document.getElementById('newPin').value.trim();
+  if(!rec||!newPin){ alert('Enter recovery code and new PIN'); return; }
+  if(newPin.length<4){ alert('PIN must be at least 4 digits'); return; }
+  if(btoa(rec)===getRecovery()){ setPIN(newPin); alert('✅ PIN reset successful. Use the new PIN to unlock.'); document.getElementById('pinInput').value=''; toggleRecovery(false); }
+  else{ alert('❌ Invalid recovery code'); }
+}
+function factoryResetPrompt(){ if(confirm('This will ERASE all local data (transactions, PIN). Continue?')){ localStorage.removeItem(PIN_KEY); localStorage.removeItem(RECOVERY_KEY); localStorage.removeItem(TX_KEY); alert('App reset. Reloading...'); location.reload(); } }
+function unlockApp(){ document.getElementById('loginCard').style.display='none'; document.getElementById('app').style.display='block'; renderTransactions(); }
+function generateRecoveryCode(){ const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let out=''; for(let i=0;i<10;i++) out+=chars[Math.floor(Math.random()*chars.length)]; return out; }
+
+// ===== Settings =====
+function changePIN(){
+  const oldPin = document.getElementById('oldPin').value.trim();
+  const a = document.getElementById('newPinA').value.trim();
+  const b = document.getElementById('newPinB').value.trim();
+  if(!oldPin||!a||!b){ alert('Enter all PIN fields'); return; }
+  if(!checkPINMatch(oldPin)){ alert('Current PIN is incorrect'); return; }
+  if(a!==b){ alert('New PIN entries do not match'); return; }
+  if(a.length<4){ alert('New PIN must be at least 4 digits'); return; }
+  setPIN(a); alert('✅ PIN changed successfully'); document.getElementById('oldPin').value=''; document.getElementById('newPinA').value=''; document.getElementById('newPinB').value='';
+}
+function viewRecovery(){ const rec=getRecovery(); if(!rec){ alert('No recovery code set.'); return;} alert('Your Recovery Code:\n\n'+atob(rec)); }
+
+// ===== Transactions =====
+function addTransaction() {
+  const party=document.getElementById('party').value.trim();
+  const type=document.getElementById('type').value;
+  const amount=parseFloat(document.getElementById('amount').value);
+  const date=document.getElementById('date').value;
+  const desc=document.getElementById('desc').value.trim();
+  if(!party||!amount||!date){ alert('Please fill all required fields'); return; }
+  const transaction={party,type,amount,date,desc};
+  if(editIndex!==null){ transactions[editIndex]=transaction; editIndex=null; }
+  else{ transactions.push(transaction); }
+  localStorage.setItem(TX_KEY, JSON.stringify(transactions));
+  clearForm(); renderTransactions();
+}
+function clearForm(){ document.getElementById('party').value=''; document.getElementById('amount').value=''; document.getElementById('date').value=''; document.getElementById('desc').value=''; }
+function editTransaction(index){
+  const t=transactions[index];
+  document.getElementById('party').value=t.party;
+  document.getElementById('type').value=t.type;
+  document.getElementById('amount').value=t.amount;
+  document.getElementById('date').value=t.date;
+  document.getElementById('desc').value=t.desc;
+  editIndex=index; window.scrollTo({top:0,behavior:'smooth'});
+}
+function deleteTransaction(index){ if(confirm('Delete this transaction?')){ transactions.splice(index,1); localStorage.setItem(TX_KEY, JSON.stringify(transactions)); renderTransactions(); } }
+
+// ===== Filtering =====
+function readFilters(){
+  filters.qParty=document.getElementById('qParty').value.trim().toLowerCase();
+  filters.qType=document.getElementById('qType').value;
+  filters
+filters.qMin=document.getElementById('qMin').value;
+  filters.qMax=document.getElementById('qMax').value;
+  filters.qFrom=document.getElementById('qFrom').value;
+  filters.qTo=document.getElementById('qTo').value;
+}
+
+function applyFilters(){ readFilters(); renderTransactions(); }
+function clearFilters(){ document.getElementById('qParty').value=''; document.getElementById('qType').value=''; document.getElementById('qMin').value=''; document.getElementById('qMax').value=''; document.getElementById('qFrom').value=''; document.getElementById('qTo').value=''; readFilters(); renderTransactions(); }
+
+// ===== Render =====
+function renderTransactions(){
+  const container=document.getElementById('transactions');
+  container.innerHTML='';
+  let totalCredit=0, totalDebit=0;
+  const filtered=transactions.filter(t=>{
+    if(filters.qParty && !t.party.toLowerCase().includes(filters.qParty)) return false;
+    if(filters.qType && t.type!==filters.qType) return false;
+    if(filters.qMin && t.amount<parseFloat(filters.qMin)) return false;
+    if(filters.qMax && t.amount>parseFloat(filters.qMax)) return false;
+    if(filters.qFrom && t.date<filters.qFrom) return false;
+    if(filters.qTo && t.date>filters.qTo) return false;
+    return true;
+  });
+  filtered.forEach((t,i)=>{
+    const div=document.createElement('div');
+    div.className='transaction '+(t.type==='credit'?'credit':'debit');
+    div.innerHTML=`<div><strong>${t.party}</strong> (${t.type==='credit'?'Sent':'Got'} ₹${t.amount})<br><span class="small">${t.desc||''} | ${t.date}</span></div>
+                   <div><button class="edit-btn" onclick="editTransaction(${i})">Edit</button>
+                   <button class="delete-btn" onclick="deleteTransaction(${i})">Delete</button></div>`;
+    container.appendChild(div);
+    if(t.type==='credit') totalCredit+=t.amount;
+    else totalDebit+=t.amount;
+  });
+  document.getElementById('totalCredit').textContent=`Sent: ₹${totalCredit}`;
+  document.getElementById('totalDebit').textContent=`Got: ₹${totalDebit}`;
+  document.getElementById('balance').textContent=`Balance: ₹${(totalDebit-totalCredit)}`;
+}
+
+// ===== Export/Import =====
+function exportToCSV(){
+  let csv='Party,Type,Amount,Date,Description\n';
+  transactions.forEach(t=>{csv+=`${t.party},${t.type},${t.amount},${t.date},"${t.desc}"\n`});
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='transactions.csv'; a.click(); URL.revokeObjectURL(url);
+}
+function importFromCSV(event){
+  const file=event.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const text=e.target.result;
+    const lines=text.split('\n').slice(1);
+    lines.forEach(line=>{
+      if(!line.trim()) return;
+      const [party,type,amount,date,desc]=line.split(',');
+      if(!party||!type||!amount||!date) return;
+      transactions.push({party,type,amount:parseFloat(amount),date,desc});
+    });
+    localStorage.setItem(TX_KEY, JSON.stringify(transactions));
+    renderTransactions();
+  };
+  reader.readAsText(file);
+}
+function exportToPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.text("PennyWise Transactions", 10, 10);
+  let y = 20;
+  transactions.forEach(t=>{
+    doc.text(`${t.date} | ${t.party} | ${t.type==='credit'?'Sent':'Got'} ₹${t.amount} | ${t.desc}`, 10, y); y+=8;
+  });
+  doc.save("transactions.pdf");
+}
+function exportToExcel(){
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.json_to_sheet(transactions);
+  XLSX.utils.book_append_sheet(wb,ws,'Transactions');
+  XLSX.writeFile(wb,'transactions.xlsx');
+}
+
+// ===== AI Summary =====
+function generateAISummary(){
+  const salary=parseFloat(document.getElementById('salaryInput').value);
+  const tbody=document.querySelector('#aiSummaryTable tbody'); tbody.innerHTML='';
+  transactions.forEach(t=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${t.party}</td>
+                  <td>${t.type==='credit'?t.amount:'-'}</td>
+                  <td>${t.type==='debit'?t.amount:'-'}</td>
+                  <td>${t.desc}</td>
+                  <td>${t.date}</td>`;
+    tbody.appendChild(tr);
+  });
+  // AI advice
+  let totalSent=transactions.filter(t=>t.type==='credit').reduce((a,b)=>a+b.amount,0);
+  let totalGot=transactions.filter(t=>t.type==='debit').reduce((a,b)=>a+b.amount,0);
+  let advice='';
+  if(!salary) advice='💡 You can optionally enter your monthly salary to get personalized advice.';
+  else{
+    const remaining=salary-totalSent;
+    if(totalSent>salary*0.7) advice=`⚠️ Your total sent exceeds 70% of salary. Try reducing unnecessary expenses. Remaining approx ₹${remaining}.`;
+    else advice=`✅ Your spending is under control. Approx remaining ₹${remaining}.`;
+  }
+  document.getElementById('aiAdvice').textContent=advice;
+}
+</script>
+</body>
+</html>
