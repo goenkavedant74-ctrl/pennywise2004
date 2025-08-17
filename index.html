@@ -3,386 +3,380 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PennyWise - Smart Expense Tracker</title>
+<title>PennyWise - Khatabook Tracker & Games</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
   --bg: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  --card-bg: rgba(255,255,255,0.9);
-  --text:#222; --muted:#444;
-  --good: #1b8a2a; --bad: #c62828;
+  --card-bg: rgba(255,255,255,0.95);
+  --text:#222; --muted:#555;
+  --good:#1b8a2a; --bad:#c62828;
   --btn1:#4facfe; --btn2:#00f2fe;
 }
 body.dark{
-  --bg: radial-gradient(1200px 800px at 20% -10%, #0f172a, #0b1220 50%, #090e1a 100%);
-  --card-bg: rgba(15,23,42,0.85);
+  --bg: #0f172a; --card-bg: rgba(15,23,42,0.85);
   --text:#e5e7eb; --muted:#9ca3af;
   --good:#22c55e; --bad:#ef4444;
   --btn1:#6366f1; --btn2:#22d3ee;
 }
-*{box-sizing:border-box}
-body { margin:0;padding:0;font-family:'Poppins',sans-serif; background:var(--bg); min-height:100vh; display:flex; flex-direction:column; align-items:center; color:var(--text); transition:background .3s,color .3s;}
-header { width:100%; max-width:900px; display:flex; justify-content:space-between; align-items:center; padding:16px 20px; color:white; font-size:1.6rem; font-weight:700;}
-header .brand{display:flex;align-items:center;gap:10px}
-header .actions{display:flex;gap:8px;align-items:center}
-.card { background: var(--card-bg); backdrop-filter: blur(12px); border-radius: 20px; box-shadow:0 6px 20px rgba(0,0,0,0.15); padding:20px; margin:12px; width:95%; max-width:900px;}
-input, select, button, textarea { width:100%; padding:12px; margin:8px 0; border-radius:12px; border:1px solid rgba(0,0,0,.15); font-size:1rem; background:transparent; color:var(--text);}
-button { background: linear-gradient(135deg, var(--btn1), var(--btn2)); border:none;color:white;font-weight:600;cursor:pointer;transition:transform .06s ease,opacity .2s;}
-button:active{transform:scale(.98);}
-button:hover{opacity:0.9;}
-.transaction-list { max-height:360px; overflow-y:auto;}
-.transaction { display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid rgba(0,0,0,0.1);}
-.transaction.credit { color: var(--good); } .transaction.debit { color: var(--bad); }
-.summary { display:grid; grid-template-columns: repeat(3,1fr); gap:12px; padding:8px 0 0; font-size:1.05rem; font-weight:700; }
-.pill{background:rgba(0,0,0,.06); padding:12px; border-radius:14px; text-align:center;}
-.actions button { padding:6px 10px; font-size:.85rem; margin-left:5px; border-radius:10px;}
-.edit-btn{background:#f59e0b;} .delete-btn{background:#ef4444;}
-.export-btn{margin:5px 0;}
-#loginCard{display:none;}
-#recoverySection{display:none;}
-#app{display:none;}
-.small{font-size:.9rem;color:var(--muted);}
-.linklike{background:transparent;color:#38bdf8;border:none;padding:0;text-decoration:underline;width:auto;}
-.row{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
-@media(max-width:720px){.row{grid-template-columns:1fr}}
-.toolbar{display:flex;gap:10px;flex-wrap:wrap}
-.muted{color:var(--muted)}
-table{width:100%; border-collapse:collapse; margin-top:10px;}
-table, th, td{border:1px solid rgba(0,0,0,0.2);}
-th, td{padding:8px; text-align:left;}
+*{box-sizing:border-box;}
+body{
+  margin:0; padding:0; font-family:'Poppins',sans-serif;
+  background: var(--bg); color: var(--text); min-height:100vh;
+}
+header{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:15px 20px; font-size:1.6rem; font-weight:700; color:white;
+}
+header .brand{display:flex; align-items:center;}
+header .actions button{
+  background:none; border:none; color:white; cursor:pointer; font-size:1.2rem;
+}
+.container{max-width:900px;margin:0 auto;padding:10px;}
+.card{background:var(--card-bg);border-radius:15px;padding:20px;margin-bottom:15px;box-shadow:0 4px 15px rgba(0,0,0,0.1);}
+.card h2{margin-top:0;color:#111;}
+input, select, textarea, button{width:100%;padding:10px;margin:8px 0;border-radius:10px;border:1px solid #ccc;font-size:1rem;}
+button{background:linear-gradient(135deg,var(--btn1),var(--btn2));color:white;font-weight:600;cursor:pointer;transition:0.2s;}
+button:hover{opacity:0.85;}
+.transaction-list{max-height:300px;overflow-y:auto;}
+.transaction{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid rgba(0,0,0,0.1);}
+.transaction.credit{color:var(--good);}
+.transaction.debit{color:var(--bad);}
+.summary{display:flex;justify-content:space-around;padding:10px;font-weight:700;}
+.summary div{flex:1;text-align:center;background:rgba(0,0,0,0.05);border-radius:10px;padding:10px;margin:5px;}
+.table-container{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+table, th, td{border:1px solid #ccc;}
+th,td{padding:8px;text-align:center;}
+.small{font-size:0.85rem;color:var(--muted);}
+.ai-advice{margin-top:10px;padding:10px;border-left:4px solid var(--btn2);background:rgba(0,0,0,0.03);}
+.flex{display:flex;gap:10px;flex-wrap:wrap;}
+.flex input,.flex select{flex:1;}
+/* Games layout */
+.games{display:flex;flex-wrap:wrap;gap:15px;}
+.game-card{flex:1;min-width:250px;background:var(--card-bg);padding:15px;border-radius:15px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,0.1);}
+.progress-bar{background:#ccc;border-radius:10px;overflow:hidden;margin-top:5px;}
+.progress-fill{height:20px;background:var(--btn2);width:0%;text-align:center;color:#fff;line-height:20px;font-weight:600;}
 </style>
 </head>
 <body>
+
 <header>
   <div class="brand">💰 PennyWise</div>
   <div class="actions">
-    <button id="themeToggle" title="Toggle theme">🌙 Dark</button>
+    <button id="themeToggle">🌙 Dark</button>
   </div>
 </header>
 
-<!-- LOGIN SCREEN -->
-<div class="card" id="loginCard">
-  <h2 id="loginTitle">🔒 Enter PIN</h2>
-  <input type="password" id="pinInput" placeholder="Enter PIN" maxlength="6">
-  <button onclick="checkPIN()">Unlock</button>
+<div class="container" id="mainContainer" style="display:none;">
 
-  <div id="firstTimeHint" class="small" style="display:none;">
-    First time here? Set a new PIN and we'll also create a <strong>Recovery Code</strong> for you.
-  </div>
-
-  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
-    <button class="linklike" onclick="toggleRecovery(true)">Forgot PIN?</button>
-    <button class="linklike" onclick="factoryResetPrompt()">Factory reset (erase data)</button>
-  </div>
-
-  <div id="recoverySection">
-    <h3>🔁 Reset with Recovery Code</h3>
-    <p class="small">Enter your saved recovery code to set a new PIN without losing your data.</p>
-    <input type="text" id="recoveryInput" placeholder="Enter Recovery Code">
-    <input type="password" id="newPin" placeholder="New PIN" maxlength="6">
-    <button onclick="resetWithRecovery()">Reset PIN</button>
-    <button class="linklike" onclick="toggleRecovery(false)">Back to login</button>
-  </div>
+<!-- Welcome -->
+<div class="card" id="welcomeCard">
+<h2 id="welcomeText">Welcome!</h2>
 </div>
 
-<!-- MAIN APP -->
-<div id="app">
-  <div class="card">
-    <h2>Add Transaction</h2>
-    <div class="row">
-      <input type="text" id="party" placeholder="Party/Person Name">
-      <select id="type">
-        <option value="credit">Sent</option>
-        <option value="debit">Got</option>
-      </select>
-      <input type="number" id="amount" placeholder="Amount">
-      <input type="date" id="date">
-    </div>
-    <textarea id="desc" placeholder="Description"></textarea>
-    <div class="toolbar">
-      <button onclick="addTransaction()">Add</button>
-      <label class="small" for="importCSV" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-        ⬆️ Import CSV <input id="importCSV" type="file" accept=".csv" style="display:none" onchange="importFromCSV(event)">
-      </label>
-      <button class="export-btn" onclick="exportToCSV()">📄 Export CSV</button>
-      <button class="export-btn" onclick="exportToPDF()">📑 Export PDF</button>
-      <button class="export-btn" onclick="exportToExcel()">📊 Export Excel</button>
-    </div>
-  </div>
+<!-- Month / Year Filter -->
+<div class="card">
+<h2>📅 View by Month / Year</h2>
+<div class="flex">
+<select id="monthSelect">
+<option value="">All Months</option>
+<option value="01">January</option>
+<option value="02">February</option>
+<option value="03">March</option>
+<option value="04">April</option>
+<option value="05">May</option>
+<option value="06">June</option>
+<option value="07">July</option>
+<option value="08">August</option>
+<option value="09">September</option>
+<option value="10">October</option>
+<option value="11">November</option>
+<option value="12">December</option>
+</select>
+<select id="yearSelect">
+<option value="">All Years</option>
+</select>
+</div>
+<button onclick="applyMonthYearFilter()">Apply</button>
+</div>
 
-  <div class="card">
-    <h2>Filters</h2>
-    <div class="row">
-      <input id="qParty" placeholder="Search party/person">
-      <select id="qType">
-        <option value="">All Types</option>
-        <option value="credit">Sent</option>
-        <option value="debit">Got</option>
-      </select>
-      <input id="qMin" type="number" placeholder="Min amount">
-      <input id="qMax" type="number" placeholder="Max amount">
-      <input id="qFrom" type="date" placeholder="From date">
-      <input id="qTo" type="date" placeholder="To date">
-    </div>
-    <div class="toolbar">
-      <button onclick="applyFilters()">🔎 Apply</button>
-      <button onclick="clearFilters()">♻️ Clear</button>
-    </div>
-    <p class="small muted">Tip: Filters are applied on the list and summary below.</p>
-  </div>
+<!-- Add Transaction -->
+<div class="card">
+<h2>➕ Add / Edit Transaction</h2>
+<div class="flex">
+<input type="text" id="party" placeholder="Party / Person Name">
+<select id="type">
+<option value="credit">Sent</option>
+<option value="debit">Got</option>
+</select>
+<input type="number" id="amount" placeholder="Amount">
+<input type="date" id="date">
+</div>
+<textarea id="desc" placeholder="Description (optional)"></textarea>
+<div class="flex">
+<button onclick="addTransaction()">Add / Update</button>
+<label class="small" style="cursor:pointer;">Import CSV <input type="file" id="importCSV" style="display:none" onchange="importFromCSV(event)"></label>
+<button onclick="exportToCSV()">Export CSV</button>
+<button onclick="exportToPDF()">Export PDF</button>
+<button onclick="exportToExcel()">Export Excel</button>
+</div>
+</div>
 
-  <div class="card">
-    <h2>Summary</h2>
-    <div class="summary">
-      <div class="pill" id="totalCredit">Sent: ₹0</div>
-      <div class="pill" id="totalDebit">Got: ₹0</div>
-      <div class="pill" id="balance">Balance: ₹0</div>
-    </div>
-  </div>
+<!-- Filters -->
+<div class="card">
+<h2>🔍 Filters</h2>
+<div class="flex">
+<input id="qParty" placeholder="Search Party / Person">
+<select id="qType">
+<option value="">All</option>
+<option value="credit">Sent</option>
+<option value="debit">Got</option>
+</select>
+<input id="qMin" type="number" placeholder="Min Amount">
+<input id="qMax" type="number" placeholder="Max Amount">
+<input id="qFrom" type="date" placeholder="From Date">
+<input id="qTo" type="date" placeholder="To Date">
+</div>
+<div class="flex">
+<button onclick="applyFilters()">Apply</button>
+<button onclick="clearFilters()">Clear</button>
+</div>
+<p class="small">Filters apply to both transaction list and summary.</p>
+</div>
 
-  <div class="card">
-    <h2>Transactions</h2>
-    <div class="transaction-list" id="transactions"></div>
-  </div>
+<!-- Summary -->
+<div class="card">
+<h2>📊 Summary</h2>
+<div class="summary">
+<div id="totalCredit">Sent: ₹0</div>
+<div id="totalDebit">Got: ₹0</div>
+<div id="balance">Balance: ₹0</div>
+</div>
+<!-- Salary Progress -->
+<div class="card">
+<h3>💵 Salary vs Expenses</h3>
+<input type="number" id="salaryInput" placeholder="Optional: Enter Monthly Salary">
+<button onclick="updateSalaryProgress()">Update Progress</button>
+<div class="progress-bar">
+<div id="salaryProgress" class="progress-fill">0%</div>
+</div>
+</div>
+</div>
 
-  <!-- AI Summary Section -->
-  <div class="card">
-    <h2>💡 AI Expense Summary</h2>
-    <p class="small muted">Optional: Enter your monthly salary for personalized advice</p>
-    <input type="number" id="salaryInput" placeholder="Enter your monthly salary (optional)">
-    <button onclick="generateAISummary()">Generate Summary</button>
+<!-- Transaction List -->
+<div class="card">
+<h2>📝 Transactions</h2>
+<div class="transaction-list" id="transactions"></div>
+</div>
 
-    <h3>Transaction Overview</h3>
-    <table id="aiSummaryTable">
-      <thead>
-        <tr>
-          <th>Party</th>
-          <th>Sent (₹)</th>
-          <th>Got (₹)</th>
-          <th>Description</th>
-          <th>Date</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+<!-- AI Summary -->
+<div class="card">
+<h2>🤖 AI Expense Summary</h2>
+<div class="flex">
+<button onclick="generateAISummary()">Generate AI Summary</button>
+</div>
+<div class="table-container">
+<table id="aiSummaryTable">
+<thead>
+<tr><th>Party</th><th>Sent</th><th>Got</th><th>Description</th><th>Date</th></tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+<div class="ai-advice" id="aiAdvice">Enter salary for personalized advice.</div>
+</div>
 
-    <h3>AI Advice</h3>
-    <div id="aiAdvice" class="small muted"></div>
-  </div>
+<!-- Mini-Games -->
+<div class="card">
+<h2>🎮 Mini Games</h2>
+<div class="games">
+<div class="game-card">
+<h3>Dice Roll 🎲</h3>
+<button onclick="rollDice()">Roll Dice</button>
+<p id="diceResult"></p>
+</div>
+<div class="game-card">
+<h3>Coin Flip 🪙</h3>
+<button onclick="flipCoin()">Flip Coin</button>
+<p id="coinResult"></p>
+</div>
+<div class="game-card">
+<h3>Number Guess 🎯</h3>
+<input type="number" id="guessNumberInput" placeholder="Guess 1-10">
+<button onclick="guessNumber()">Guess</button>
+<p id="guessResult"></p>
+</div>
+</div>
+</div>
+
+</div>
+
+<!-- PIN / Name Setup & Login -->
+<div class="card" id="loginCard">
+<h2>🔐 Enter PIN</h2>
+<div class="flex">
+<input type="text" id="userName" placeholder="Your Name (First time)">
+<input type="password" id="userPin" placeholder="4-digit PIN">
+</div>
+<div class="flex">
+<button onclick="login()">Login / Set PIN</button>
+<button onclick="recoverPin()">Recover PIN</button>
+</div>
+<div class="small" id="loginMsg"></div>
 </div>
 
 <script>
-// ===== Storage helpers =====
-const PIN_KEY = 'pennyPin';
-const RECOVERY_KEY = 'pennyRecovery';
-const TX_KEY = 'transactions';
-const THEME_KEY = 'pennyTheme';
-
-const getPIN = () => localStorage.getItem(PIN_KEY);
-const setPIN = (pin) => localStorage.setItem(PIN_KEY, btoa(pin));
-const checkPINMatch = (pin) => localStorage.getItem(PIN_KEY) === btoa(pin);
-const getRecovery = () => localStorage.getItem(RECOVERY_KEY);
-const setRecovery = (code) => localStorage.setItem(RECOVERY_KEY, btoa(code));
-
-let transactions = JSON.parse(localStorage.getItem(TX_KEY)) || [];
+// ===== Base Setup =====
+let transactions = JSON.parse(localStorage.getItem('transactions')||'[]');
 let editIndex = null;
-let filters = { qParty:"", qType:"", qMin:"", qMax:"", qFrom:"", qTo:"" };
+const themeBtn=document.getElementById('themeToggle');
+themeBtn.onclick=()=>{document.body.classList.toggle('dark'); themeBtn.textContent=document.body.classList.contains('dark')?'☀️ Light':'🌙 Dark';}
 
-// ===== Theme =====
-const themeBtn = document.getElementById('themeToggle');
-function setTheme(mode){
-  if(mode==='dark'){ document.body.classList.add('dark'); themeBtn.textContent='☀️ Light'; }
-  else { document.body.classList.remove('dark'); themeBtn.textContent='🌙 Dark'; }
-  localStorage.setItem(THEME_KEY, mode);
-}
-themeBtn.onclick = ()=> setTheme(document.body.classList.contains('dark')? 'light':'dark');
+// ===== PIN/Login =====
+function login(){
+  let name = document.getElementById('userName').value.trim();
+  let pin = document.getElementById('userPin').value.trim();
+  let storedPin = localStorage.getItem('pin');
+  let storedName = localStorage.getItem('userName');
 
-// ===== Login flow =====
-window.onload = function() {
-  setTheme(localStorage.getItem(THEME_KEY)||'light');
-  const hasPIN = !!getPIN();
-  document.getElementById('loginCard').style.display = 'block';
-  document.getElementById('loginTitle').innerText = hasPIN ? '🔒 Enter PIN' : '🔑 Set a new PIN';
-  document.getElementById('firstTimeHint').style.display = hasPIN ? 'none' : 'block';
-}
-
-function checkPIN() {
-  const inputPIN = document.getElementById('pinInput').value.trim();
-  const hasPIN = !!getPIN();
-  if(!hasPIN){
-    if(inputPIN.length < 4){ alert('PIN must be at least 4 digits'); return; }
-    setPIN(inputPIN);
-    const rec = generateRecoveryCode();
-    setRecovery(rec);
-    alert('PIN set successfully!\nYour Recovery Code (save it safely):\n\n'+rec);
-    unlockApp();
+  if(!storedPin){ // First-time setup
+    if(!name || !pin || pin.length!==4){document.getElementById('loginMsg').textContent='Enter name & 4-digit PIN'; return;}
+    localStorage.setItem('pin', pin); localStorage.setItem('userName', name);
+    localStorage.setItem('securityAnswer', prompt('Set security answer for PIN recovery (e.g., favorite color)').trim());
+    enterApp(name);
   } else {
-    if(checkPINMatch(inputPIN)){ unlockApp(); }
-    else{ alert('❌ Wrong PIN'); }
+    if(pin === storedPin){enterApp(storedName);}
+    else{document.getElementById('loginMsg').textContent='Incorrect PIN';}
   }
 }
-function toggleRecovery(show){ document.getElementById('recoverySection').style.display=show?'block':'none'; }
-function resetWithRecovery(){
-  const rec = document.getElementById('recoveryInput').value.trim();
-  const newPin = document.getElementById('newPin').value.trim();
-  if(!rec||!newPin){ alert('Enter recovery code and new PIN'); return; }
-  if(newPin.length<4){ alert('PIN must be at least 4 digits'); return; }
-  if(btoa(rec)===getRecovery()){ setPIN(newPin); alert('✅ PIN reset successful. Use the new PIN to unlock.'); document.getElementById('pinInput').value=''; toggleRecovery(false); }
-  else{ alert('❌ Invalid recovery code'); }
+function recoverPin(){
+  let answer = prompt('Enter your security answer to reset PIN:').trim();
+  let storedAnswer = localStorage.getItem('securityAnswer');
+  if(answer === storedAnswer){
+    let newPin = prompt('Enter new 4-digit PIN:').trim();
+    if(newPin.length===4){localStorage.setItem('pin', newPin); alert('PIN reset successful');}
+    else{alert('PIN must be 4 digits');}
+  } else alert('Wrong security answer');
 }
-function factoryResetPrompt(){ if(confirm('This will ERASE all local data (transactions, PIN). Continue?')){ localStorage.removeItem(PIN_KEY); localStorage.removeItem(RECOVERY_KEY); localStorage.removeItem(TX_KEY); alert('App reset. Reloading...'); location.reload(); } }
-function unlockApp(){ document.getElementById('loginCard').style.display='none'; document.getElementById('app').style.display='block'; renderTransactions(); }
-function generateRecoveryCode(){ const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let out=''; for(let i=0;i<10;i++) out+=chars[Math.floor(Math.random()*chars.length)]; return out; }
-
-// ===== Settings =====
-function changePIN(){
-  const oldPin = document.getElementById('oldPin').value.trim();
-  const a = document.getElementById('newPinA').value.trim();
-  const b = document.getElementById('newPinB').value.trim();
-  if(!oldPin||!a||!b){ alert('Enter all PIN fields'); return; }
-  if(!checkPINMatch(oldPin)){ alert('Current PIN is incorrect'); return; }
-  if(a!==b){ alert('New PIN entries do not match'); return; }
-  if(a.length<4){ alert('New PIN must be at least 4 digits'); return; }
-  setPIN(a); alert('✅ PIN changed successfully'); document.getElementById('oldPin').value=''; document.getElementById('newPinA').value=''; document.getElementById('newPinB').value='';
-}
-function viewRecovery(){ const rec=getRecovery(); if(!rec){ alert('No recovery code set.'); return;} alert('Your Recovery Code:\n\n'+atob(rec)); }
-
-// ===== Transactions =====
-function addTransaction() {
-  const party=document.getElementById('party').value.trim();
-  const type=document.getElementById('type').value;
-  const amount=parseFloat(document.getElementById('amount').value);
-  const date=document.getElementById('date').value;
-  const desc=document.getElementById('desc').value.trim();
-  if(!party||!amount||!date){ alert('Please fill all required fields'); return; }
-  const transaction={party,type,amount,date,desc};
-  if(editIndex!==null){ transactions[editIndex]=transaction; editIndex=null; }
-  else{ transactions.push(transaction); }
-  localStorage.setItem(TX_KEY, JSON.stringify(transactions));
-  clearForm(); renderTransactions();
-}
-function clearForm(){ document.getElementById('party').value=''; document.getElementById('amount').value=''; document.getElementById('date').value=''; document.getElementById('desc').value=''; }
-function editTransaction(index){
-  const t=transactions[index];
-  document.getElementById('party').value=t.party;
-  document.getElementById('type').value=t.type;
-  document.getElementById('amount').value=t.amount;
-  document.getElementById('date').value=t.date;
-  document.getElementById('desc').value=t.desc;
-  editIndex=index; window.scrollTo({top:0,behavior:'smooth'});
-}
-function deleteTransaction(index){ if(confirm('Delete this transaction?')){ transactions.splice(index,1); localStorage.setItem(TX_KEY, JSON.stringify(transactions)); renderTransactions(); } }
-
-// ===== Filtering =====
-function readFilters(){
-  filters.qParty=document.getElementById('qParty').value.trim().toLowerCase();
-  filters.qType=document.getElementById('qType').value;
-  filters
-filters.qMin=document.getElementById('qMin').value;
-  filters.qMax=document.getElementById('qMax').value;
-  filters.qFrom=document.getElementById('qFrom').value;
-  filters.qTo=document.getElementById('qTo').value;
+function enterApp(name){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('mainContainer').style.display='block';
+  document.getElementById('welcomeText').textContent=`Welcome, ${name}!`;
+  populateYearSelect();
+  renderTransactions();
+  updateSalaryProgress();
 }
 
-function applyFilters(){ readFilters(); renderTransactions(); }
-function clearFilters(){ document.getElementById('qParty').value=''; document.getElementById('qType').value=''; document.getElementById('qMin').value=''; document.getElementById('qMax').value=''; document.getElementById('qFrom').value=''; document.getElementById('qTo').value=''; readFilters(); renderTransactions(); }
-
-// ===== Render =====
-function renderTransactions(){
-  const container=document.getElementById('transactions');
-  container.innerHTML='';
-  let totalCredit=0, totalDebit=0;
-  const filtered=transactions.filter(t=>{
-    if(filters.qParty && !t.party.toLowerCase().includes(filters.qParty)) return false;
-    if(filters.qType && t.type!==filters.qType) return false;
-    if(filters.qMin && t.amount<parseFloat(filters.qMin)) return false;
-    if(filters.qMax && t.amount>parseFloat(filters.qMax)) return false;
-    if(filters.qFrom && t.date<filters.qFrom) return false;
-    if(filters.qTo && t.date>filters.qTo) return false;
-    return true;
+// ===== Populate Year dropdown =====
+function populateYearSelect(){
+  let years = [...new Set(transactions.map(t=>t.date.split('-')[0]))];
+  let yearSelect=document.getElementById('yearSelect');
+  years.forEach(y=>{
+    if(!Array.from(yearSelect.options).some(opt=>opt.value===y)){
+      let o = document.createElement('option'); o.value=y; o.textContent=y; yearSelect.appendChild(o);
+    }
   });
-  filtered.forEach((t,i)=>{
-    const div=document.createElement('div');
-    div.className='transaction '+(t.type==='credit'?'credit':'debit');
-    div.innerHTML=`<div><strong>${t.party}</strong> (${t.type==='credit'?'Sent':'Got'} ₹${t.amount})<br><span class="small">${t.desc||''} | ${t.date}</span></div>
-                   <div><button class="edit-btn" onclick="editTransaction(${i})">Edit</button>
-                   <button class="delete-btn" onclick="deleteTransaction(${i})">Delete</button></div>`;
-    container.appendChild(div);
-    if(t.type==='credit') totalCredit+=t.amount;
-    else totalDebit+=t.amount;
-  });
-  document.getElementById('totalCredit').textContent=`Sent: ₹${totalCredit}`;
-  document.getElementById('totalDebit').textContent=`Got: ₹${totalDebit}`;
-  document.getElementById('balance').textContent=`Balance: ₹${(totalDebit-totalCredit)}`;
 }
 
-// ===== Export/Import =====
-function exportToCSV(){
-  let csv='Party,Type,Amount,Date,Description\n';
-  transactions.forEach(t=>{csv+=`${t.party},${t.type},${t.amount},${t.date},"${t.desc}"\n`});
-  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download='transactions.csv'; a.click(); URL.revokeObjectURL(url);
+// ===== Month/Year Filter =====
+function applyMonthYearFilter(){
+  const month=document.getElementById('monthSelect').value;
+  const year=document.getElementById('yearSelect').value;
+  renderTransactions(t=>{if(month && t.date.split('-')[1]!==month) return false; if(year && t.date.split('-')[0]!==year) return false; return true;});
 }
-function importFromCSV(event){
-  const file=event.target.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=function(e){
-    const text=e.target.result;
-    const lines=text.split('\n').slice(1);
-    lines.forEach(line=>{
-      if(!line.trim()) return;
-      const [party,type,amount,date,desc]=line.split(',');
-      if(!party||!type||!amount||!date) return;
-      transactions.push({party,type,amount:parseFloat(amount),date,desc});
-    });
-    localStorage.setItem(TX_KEY, JSON.stringify(transactions));
-    renderTransactions();
-  };
-  reader.readAsText(file);
+
+// ===== Transaction Functions =====
+function addTransaction(){
+const party=document.getElementById('party').value.trim();
+const type=document.getElementById('type').value;
+const amount=parseFloat(document.getElementById('amount').value);
+const date=document.getElementById('date').value;
+const desc=document.getElementById('desc').value.trim();
+if(!party||!amount||!date){alert('Please fill required fields');return;}
+const tx={party,type,amount,date,desc};
+if(editIndex!==null){transactions[editIndex]=tx;editIndex=null;}else{transactions.push(tx);}
+transactions.sort((a,b)=>new Date(a.date)-new Date(b.date));
+localStorage.setItem('transactions',JSON.stringify(transactions));
+populateYearSelect();
+document.getElementById('party').value='';document.getElementById('amount').value='';document.getElementById('date').value='';document.getElementById('desc').value='';
+renderTransactions();
+updateSalaryProgress();
 }
-function exportToPDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.text("PennyWise Transactions", 10, 10);
-  let y = 20;
-  transactions.forEach(t=>{
-    doc.text(`${t.date} | ${t.party} | ${t.type==='credit'?'Sent':'Got'} ₹${t.amount} | ${t.desc}`, 10, y); y+=8;
-  });
-  doc.save("transactions.pdf");
+
+function editTransaction(i){const t=transactions[i];document.getElementById('party').value=t.party;document.getElementById('type').value=t.type;document.getElementById('amount').value=t.amount;document.getElementById('date').value=t.date;document.getElementById('desc').value=t.desc;editIndex=i;}
+function deleteTransaction(i){if(confirm('Delete this transaction?')){transactions.splice(i,1);localStorage.setItem('transactions',JSON.stringify(transactions));renderTransactions();updateSalaryProgress();}}
+
+function applyFilters(){renderTransactions();}
+function clearFilters(){document.getElementById('qParty').value='';document.getElementById('qType').value='';document.getElementById('qMin').value='';document.getElementById('qMax').value='';document.getElementById('qFrom').value='';document.getElementById('qTo').value='';renderTransactions();}
+
+function renderTransactions(extraFilter){
+const list=document.getElementById('transactions');list.innerHTML='';
+let totalCredit=0,totalDebit=0;
+const fp=transactions.filter(t=>{
+const qParty=document.getElementById('qParty').value.trim().toLowerCase();
+const qType=document.getElementById('qType').value;
+const qMin=document.getElementById('qMin').value;
+const qMax=document.getElementById('qMax').value;
+const qFrom=document.getElementById('qFrom').value;
+const qTo=document.getElementById('qTo').value;
+if(extraFilter && !extraFilter(t)) return false;
+if(qParty && !t.party.toLowerCase().includes(qParty))return false;
+if(qType && t.type!==qType)return false;
+if(qMin && t.amount<parseFloat(qMin))return false;
+if(qMax && t.amount>parseFloat(qMax))return false;
+if(qFrom && t.date<qFrom)return false;
+if(qTo && t.date>qTo)return false;
+return true;
+});
+fp.forEach((t,i)=>{
+const div=document.createElement('div');div.className='transaction '+(t.type==='credit'?'credit':'debit');
+div.innerHTML=`<div><strong>${t.party}</strong> (${t.type==='credit'?'Sent':'Got'} ₹${t.amount})<br><span class="small">${t.desc||''} | ${t.date}</span></div>
+<div><button onclick="editTransaction(${i})">Edit</button> <button onclick="deleteTransaction(${i})">Delete</button></div>`;
+list.appendChild(div);
+if(t.type==='credit')totalCredit+=t.amount;else totalDebit+=t.amount;
+});
+document.getElementById('totalCredit').textContent=`Sent: ₹${totalCredit}`;
+document.getElementById('totalDebit').textContent=`Got: ₹${totalDebit}`;
+document.getElementById('balance').textContent=`Balance: ₹${(totalDebit-totalCredit)}`;
+generateAISummary();
 }
-function exportToExcel(){
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.json_to_sheet(transactions);
-  XLSX.utils.book_append_sheet(wb,ws,'Transactions');
-  XLSX.writeFile(wb,'transactions.xlsx');
-}
+
+// ===== Export / Import =====
+function exportToCSV(){let csv='Party,Type,Amount,Date,Description\n';transactions.forEach(t=>{csv+=`${t.party},${t.type},${t.amount},${t.date},"${t.desc}"\n`});const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='transactions.csv';a.click();}
+function importFromCSV(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(ev){const lines=ev.target.result.split('\n').slice(1);lines.forEach(line=>{if(!line.trim())return;const [party,type,amount,date,desc]=line.split(',');if(!party||!type||!amount||!date)return;transactions.push({party,type,amount:parseFloat(amount),date,desc});});transactions.sort((a,b)=>new Date(a.date)-new Date(b.date));localStorage.setItem('transactions',JSON.stringify(transactions));populateYearSelect();renderTransactions();};reader.readAsText(file);}
+function exportToPDF(){const { jsPDF }=window.jspdf;const doc=new jsPDF();doc.text('PennyWise Transactions',10,10);let y=20;transactions.forEach(t=>{doc.text(`${t.date} | ${t.party} | ${t
+.type==='credit'?'Sent':'Got'} ₹${t.amount} | ${t.desc}`,10,y);y+=8;if(y>280){doc.addPage();y=10;}});doc.save('transactions.pdf');}
+function exportToExcel(){const wb=XLSX.utils.book_new();const ws=XLSX.utils.json_to_sheet(transactions);XLSX.utils.book_append_sheet(wb,ws,'Transactions');XLSX.writeFile(wb,'transactions.xlsx');}
 
 // ===== AI Summary =====
 function generateAISummary(){
-  const salary=parseFloat(document.getElementById('salaryInput').value);
-  const tbody=document.querySelector('#aiSummaryTable tbody'); tbody.innerHTML='';
-  transactions.forEach(t=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${t.party}</td>
-                  <td>${t.type==='credit'?t.amount:'-'}</td>
-                  <td>${t.type==='debit'?t.amount:'-'}</td>
-                  <td>${t.desc}</td>
-                  <td>${t.date}</td>`;
-    tbody.appendChild(tr);
-  });
-  // AI advice
-  let totalSent=transactions.filter(t=>t.type==='credit').reduce((a,b)=>a+b.amount,0);
-  let totalGot=transactions.filter(t=>t.type==='debit').reduce((a,b)=>a+b.amount,0);
-  let advice='';
-  if(!salary) advice='💡 You can optionally enter your monthly salary to get personalized advice.';
-  else{
-    const remaining=salary-totalSent;
-    if(totalSent>salary*0.7) advice=`⚠️ Your total sent exceeds 70% of salary. Try reducing unnecessary expenses. Remaining approx ₹${remaining}.`;
-    else advice=`✅ Your spending is under control. Approx remaining ₹${remaining}.`;
-  }
-  document.getElementById('aiAdvice').textContent=advice;
+const salary=parseFloat(document.getElementById('salaryInput').value);
+const tbody=document.querySelector('#aiSummaryTable tbody');tbody.innerHTML='';
+transactions.forEach(t=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${t.party}</td><td>${t.type==='credit'?t.amount:'-'}</td><td>${t.type==='debit'?t.amount:'-'}</td><td>${t.desc}</td><td>${t.date}</td>`;tbody.appendChild(tr);});
+let totalSent=transactions.filter(t=>t.type==='credit').reduce((a,b)=>a+b.amount,0);
+let totalGot=transactions.filter(t=>t.type==='debit').reduce((a,b)=>a+b.amount,0);
+let advice='';
+if(!salary)advice='💡 Optional: Enter salary for personalized advice.';
+else{const remaining=salary-totalSent;if(totalSent>salary*0.7)advice=`⚠️ Your total sent exceeds 70% of salary. Try reducing unnecessary expenses. Remaining approx ₹${remaining}.`;else advice=`✅ Spending under control. Approx remaining ₹${remaining}.`;}
+document.getElementById('aiAdvice').textContent=advice;
+updateSalaryProgress();
 }
+
+// ===== Salary Progress Bar =====
+function updateSalaryProgress(){
+const salary=parseFloat(document.getElementById('salaryInput').value);
+let totalSent=transactions.filter(t=>t.type==='credit').reduce((a,b)=>a+b.amount,0);
+let perc = salary ? Math.min(100, Math.round((totalSent/salary)*100)) : 0;
+document.getElementById('salaryProgress').style.width=perc+'%';
+document.getElementById('salaryProgress').textContent=salary ? perc+'%' : '0%';
+}
+
+// ===== Mini Games =====
+function rollDice(){let n=Math.floor(Math.random()*6)+1;document.getElementById('diceResult').textContent=`You rolled: ${n}`;}
+function flipCoin(){let c=Math.random()<0.5?'Heads':'Tails';document.getElementById('coinResult').textContent=`${c}`;}
+function guessNumber(){let guess=parseInt(document.getElementById('guessNumberInput').value);let n=Math.floor(Math.random()*10)+1;if(guess===n)document.getElementById('guessResult').textContent='🎉 Correct!';else document.getElementById('guessResult').textContent=`❌ Wrong! Number was ${n}`;}
 </script>
 </body>
 </html>
